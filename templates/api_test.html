@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot API Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .endpoint { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 100px; font-family: monospace; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background: #0056b3; }
+        .response { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Chatbot API Tester</h1>
+        
+        <!-- Chat Message Endpoint -->
+        <div class="endpoint">
+            <h3>POST /api/chat/ - Send Chat Message (JSON)</h3>
+            <div class="form-group">
+                <label for="message">Message:</label>
+                <input type="text" id="message" value="Hello, how are you?" placeholder="Enter your message">
+            </div>
+            <div class="form-group">
+                <label for="thread_id">Thread ID:</label>
+                <input type="text" id="thread_id" value="default" placeholder="Enter thread ID">
+            </div>
+            <button onclick="sendChatMessage()">Send Message</button>
+            
+            <div class="response" id="chatResponse" style="display:none;">
+                <h4>Response:</h4>
+                <pre id="chatResponseText"></pre>
+            </div>
+        </div>
+        <!-- File Upload Endpoint -->
+        <div class="endpoint">
+            <h3>POST /api/chat/ - Upload File</h3>
+            <div class="form-group">
+                <label for="file_upload">Select File:</label>
+                <input type="file" id="file_upload">
+            </div>
+            <div class="form-group">
+                <label for="upload_thread_id">Thread ID:</label>
+                <input type="text" id="upload_thread_id" value="default" placeholder="Enter thread ID">
+            </div>
+            <button onclick="uploadFile()">Upload File</button>
+            
+            <div class="response" id="uploadResponse" style="display:none;">
+                <h4>Response:</h4>
+                <pre id="uploadResponseText"></pre>
+            </div>
+        </div>
+        <!-- Get Threads Endpoint -->
+        <div class="endpoint">
+            <h3>GET /api/chat/ - Get All Threads</h3>
+            <button onclick="getAllThreads()">Get Threads</button>
+            
+            <div class="response" id="threadsResponse" style="display:none;">
+                <h4>Response:</h4>
+                <pre id="threadsResponseText"></pre>
+            </div>
+        </div>
+
+        <!-- Get Specific Thread Endpoint -->
+        <div class="endpoint">
+            <h3>GET /api/chat/?thread_id=xxx - Get Thread Details</h3>
+            <div class="form-group">
+                <label for="get_thread_id">Thread ID:</label>
+                <input type="text" id="get_thread_id" value="default" placeholder="Enter thread ID">
+            </div>
+            <button onclick="getThreadDetails()">Get Thread Details</button>
+            
+            <div class="response" id="threadDetailsResponse" style="display:none;">
+                <h4>Response:</h4>
+                <pre id="threadDetailsResponseText"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/chat/';
+
+        function showResponse(elementId, text) {
+            const element = document.getElementById(elementId);
+            const textElement = document.getElementById(elementId + 'Text');
+            textElement.textContent = text;
+            element.style.display = 'block';
+        }
+
+        async function sendChatMessage() {
+            const message = document.getElementById('message').value;
+            const thread_id = document.getElementById('thread_id').value;
+            
+            try {
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        thread_id: thread_id
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse('chatResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResponse('chatResponse', 'Error: ' + error.toString());
+            }
+        }
+
+        async function getAllThreads() {
+            try {
+                const response = await fetch(API_BASE);
+                const data = await response.json();
+                showResponse('threadsResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResponse('threadsResponse', 'Error: ' + error.toString());
+            }
+        }
+        
+        async function getThreadDetails() {
+            const thread_id = document.getElementById('get_thread_id').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}?thread_id=${thread_id}`);
+                const data = await response.json();
+                showResponse('threadDetailsResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResponse('threadDetailsResponse', 'Error: ' + error.toString());
+            }
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('file_upload');
+            const thread_id = document.getElementById('upload_thread_id').value;
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('thread_id', thread_id);
+            
+            try {
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    body: formData
+                    // Note: Don't set Content-Type header for FormData - browser will set it automatically
+                });
+                
+                const data = await response.json();
+                showResponse('uploadResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResponse('uploadResponse', 'Error: ' + error.toString());
+            }
+        }
+
+    </script>
+</body>
+</html>
