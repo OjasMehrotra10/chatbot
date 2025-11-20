@@ -4,3 +4,5 @@ chatbot.db-shm
 chatbot.db-wal
 db.sqlite3
 AskFromDoc Chatbot.zip
+__pycache__/
+*.pyc
